@@ -1,0 +1,44 @@
+# ansible-playbook -i localhost, playbook.yml
+# Should result if "true" for "new.crt", and "false" for "old.crt"
+# Fails miserably if any of the files does not exist (should return "true"
+# if the keystore is missing).
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    cert_path: ./old.crt
+    keystore_path: ./old.p12
+    keystore_storepass: foobar
+
+  tasks:
+    - name: Identify new certificate file
+      command: |
+        openssl x509 -in {{ cert_path }} -fingerprint -noout
+      register: new_crt
+      changed_when: false
+
+    - name: Print fingerprint of new cert
+      debug:
+        var: new_crt.stdout
+
+    - name: Identify old certificate in keystore
+      shell: |
+        openssl pkcs12 -in {{ keystore_path | quote }} -password "pass:{{ keystore_storepass | quote }}" -nokeys \
+          | openssl x509 -fingerprint -noout
+      register: old_crt
+      changed_when: false
+
+    - name: Print fingerprint of old cert
+      debug:
+        var: old_crt.stdout
+
+    - name: Set whether keystore needs to be regenerated
+      set_fact:
+        regenerate_keystore_and_truststore: "{{ (old_crt.stdout != new_crt.stdout) | bool }}"
+
+    - name: Print if keystore needs to be rebuilt
+      debug:
+        var: regenerate_keystore_and_truststore
+
