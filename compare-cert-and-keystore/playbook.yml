@@ -29,7 +29,7 @@
         path: "{{ keystore_path }}"
       register: keystore_stat
 
-    - name: Identify old certificate file
+    - name: Examine keystore...
       block:
         - name: Create temp file for the certificate in the keystore
           tempfile:
