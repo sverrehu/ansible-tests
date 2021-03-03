@@ -8,35 +8,52 @@
   connection: local
   gather_facts: false
   vars:
-    cert_path: ./old.crt
+    cert_path: ./new.crt
     keystore_path: ./old.p12
     keystore_storepass: foobar
 
   tasks:
     - name: Identify new certificate file
-      command: |
-        openssl x509 -in {{ cert_path }} -fingerprint -noout
+      community.crypto.x509_certificate_info:
+        path: "{{ cert_path }}"
       register: new_crt
-      changed_when: false
 
     - name: Print fingerprint of new cert
       debug:
-        var: new_crt.stdout
+        var: new_crt.fingerprints
 
-    - name: Identify old certificate in keystore
-      shell: |
-        openssl pkcs12 -in {{ keystore_path | quote }} -password "pass:{{ keystore_storepass | quote }}" -nokeys \
-          | openssl x509 -fingerprint -noout
-      register: old_crt
+    - name: Create temp file for the certificate in the keystore
+      tempfile:
+        suffix: .pem
+      register: old_crt_file
       changed_when: false
+
+    - name: Extract old certificate from PKCS#12
+      community.crypto.openssl_pkcs12:
+        action: parse
+        src: "{{ keystore_path }}"
+        path: "{{ old_crt_file.path }}"
+        passphrase: "{{ keystore_storepass }}"
+      changed_when: false
+
+    - name: Identify old certificate file
+      community.crypto.x509_certificate_info:
+        path: "{{ old_crt_file.path }}"
+      register: old_crt
 
     - name: Print fingerprint of old cert
       debug:
-        var: old_crt.stdout
+        var: old_crt.fingerprints
 
+    - name: Delete temp file
+      file:
+        path: "{{ old_crt_file.path }}"
+        state: absent
+      changed_when: false
+    
     - name: Set whether keystore needs to be regenerated
       set_fact:
-        regenerate_keystore_and_truststore: "{{ (old_crt.stdout != new_crt.stdout) | bool }}"
+        regenerate_keystore_and_truststore: "{{ (old_crt.fingerprints != new_crt.fingerprints) | bool }}"
 
     - name: Print if keystore needs to be rebuilt
       debug:
