@@ -1,18 +1,20 @@
 # ansible-playbook -i localhost, playbook.yml
 # Should result if "true" for "new.crt", and "false" for "old.crt"
-# Fails miserably if any of the files does not exist (should return "true"
-# if the keystore is missing).
 ---
 - name: Test
   hosts: localhost
   connection: local
   gather_facts: false
   vars:
-    cert_path: ./new.crt
+    cert_path: ./old.crt
     keystore_path: ./old.p12
     keystore_storepass: foobar
 
   tasks:
+    - name: Assume we need to regenerate
+      set_fact:
+        regenerate_keystore_and_truststore: true
+
     - name: Identify new certificate file
       community.crypto.x509_certificate_info:
         path: "{{ cert_path }}"
@@ -22,38 +24,47 @@
       debug:
         var: new_crt.fingerprints
 
-    - name: Create temp file for the certificate in the keystore
-      tempfile:
-        suffix: .pem
-      register: old_crt_file
-      changed_when: false
-
-    - name: Extract old certificate from PKCS#12
-      community.crypto.openssl_pkcs12:
-        action: parse
-        src: "{{ keystore_path }}"
-        path: "{{ old_crt_file.path }}"
-        passphrase: "{{ keystore_storepass }}"
-      changed_when: false
+    - name: Check if keystore exists
+      stat:
+        path: "{{ keystore_path }}"
+      register: keystore_stat
 
     - name: Identify old certificate file
-      community.crypto.x509_certificate_info:
-        path: "{{ old_crt_file.path }}"
-      register: old_crt
+      block:
+        - name: Create temp file for the certificate in the keystore
+          tempfile:
+            suffix: .pem
+          register: old_crt_file
+          changed_when: false
 
-    - name: Print fingerprint of old cert
-      debug:
-        var: old_crt.fingerprints
+        - name: Extract old certificate from PKCS#12
+          community.crypto.openssl_pkcs12:
+            action: parse
+            src: "{{ keystore_path }}"
+            path: "{{ old_crt_file.path }}"
+            passphrase: "{{ keystore_storepass }}"
+          changed_when: false
 
-    - name: Delete temp file
-      file:
-        path: "{{ old_crt_file.path }}"
-        state: absent
-      changed_when: false
-    
-    - name: Set whether keystore needs to be regenerated
-      set_fact:
-        regenerate_keystore_and_truststore: "{{ (old_crt.fingerprints != new_crt.fingerprints) | bool }}"
+        - name: Identify old certificate file
+          community.crypto.x509_certificate_info:
+            path: "{{ old_crt_file.path }}"
+          register: old_crt
+
+        - name: Print fingerprint of old cert
+          debug:
+            var: old_crt.fingerprints
+
+        - name: Delete temp file
+          file:
+            path: "{{ old_crt_file.path }}"
+            state: absent
+          changed_when: false
+
+        - name: Set whether keystore needs to be regenerated
+          set_fact:
+            regenerate_keystore_and_truststore: "{{ (old_crt.fingerprints != new_crt.fingerprints) | bool }}"
+
+      when: keystore_stat.stat.exists
 
     - name: Print if keystore needs to be rebuilt
       debug:
