@@ -11,26 +11,31 @@
     keystore_storepass: foobar
 
   tasks:
-    - name: Assume we need to regenerate
+    - name: Assume we do not need to regenerate
       set_fact:
-        regenerate_keystore_and_truststore: true
-
-    - name: Identify new certificate file
-      community.crypto.x509_certificate_info:
-        path: "{{ cert_path }}"
-      register: new_crt
-
-    - name: Print fingerprint of new cert
-      debug:
-        var: new_crt.fingerprints
+        regenerate_keystore_and_truststore: false
 
     - name: Check if keystore exists
       stat:
         path: "{{ keystore_path }}"
       register: keystore_stat
 
+    - name: Need to regenerate if keystore is missing
+      set_fact:
+        regenerate_keystore_and_truststore: true
+      when: not keystore_stat.stat.exists
+      
     - name: Examine keystore...
       block:
+        - name: Identify new certificate file
+          community.crypto.x509_certificate_info:
+            path: "{{ cert_path }}"
+          register: new_crt
+
+        - name: Print fingerprint of new cert
+          debug:
+            var: new_crt.fingerprints
+
         - name: Create temp file for the certificate in the keystore
           tempfile:
             suffix: .pem
@@ -62,7 +67,8 @@
 
         - name: Set whether keystore needs to be regenerated
           set_fact:
-            regenerate_keystore_and_truststore: "{{ (old_crt.fingerprints != new_crt.fingerprints) | bool }}"
+            regenerate_keystore_and_truststore: true
+          when: (old_crt.fingerprints != new_crt.fingerprints) | bool
 
       when: keystore_stat.stat.exists
 
