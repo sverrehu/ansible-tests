@@ -6,9 +6,10 @@
   connection: local
   gather_facts: false
   vars:
-    cert_path: ./old.crt
-    keystore_path: ./old.p12
-    keystore_storepass: foobar
+    cert_and_keystore:
+      cert_path: ./new.crt
+      keystore_path: ./old.p12
+      keystore_storepass: foobar
 
   tasks:
     - name: Assume we do not need to regenerate
@@ -17,7 +18,7 @@
 
     - name: Check if keystore exists
       stat:
-        path: "{{ keystore_path }}"
+        path: "{{ cert_and_keystore.keystore_path }}"
       register: keystore_stat
 
     - name: Need to regenerate if keystore is missing
@@ -29,7 +30,7 @@
       block:
         - name: Identify new certificate file
           community.crypto.x509_certificate_info:
-            path: "{{ cert_path }}"
+            path: "{{ cert_and_keystore.cert_path }}"
           register: new_crt
 
         - name: Print fingerprint of new cert
@@ -45,9 +46,9 @@
         - name: Extract old certificate from PKCS#12
           community.crypto.openssl_pkcs12:
             action: parse
-            src: "{{ keystore_path }}"
+            src: "{{ cert_and_keystore.keystore_path }}"
             path: "{{ old_crt_file.path }}"
-            passphrase: "{{ keystore_storepass }}"
+            passphrase: "{{ cert_and_keystore.keystore_storepass }}"
           changed_when: false
 
         - name: Identify old certificate file
