@@ -1,15 +1,22 @@
+# PKCS#12 operations fail with "TypeError: password must be bytes-like" on the cryptography backend
+
 <!--- Verify first that your issue is not already reported on GitHub -->
 <!--- Also test if the latest release and devel branch are affected too -->
 <!--- Complete *all* sections as described, this form is processed automatically -->
 
 ##### SUMMARY
 <!--- Explain the problem briefly below -->
+Some PKCS#12 operations that involve `passphrase`, which worked with
+the `pyopenssl` backend, stopped working after `cryptography` was made
+the default backend. Error message output may indicate that there are
+missing calls to `to_bytes` for `self.passphrase`.
 
 ##### ISSUE TYPE
 - Bug Report
 
 ##### COMPONENT NAME
 <!--- Write the short name of the module, plugin, task or feature below, use your best guess if unsure -->
+openssl_pkcs12 with `cryptography` backend.
 
 ##### ANSIBLE VERSION
 <!--- Paste verbatim output from "ansible --version" between quotes -->
