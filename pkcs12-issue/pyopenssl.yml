@@ -1,0 +1,16 @@
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Extract certificate from PKCS#12 file
+      community.crypto.openssl_pkcs12:
+        action: parse
+        src: "./foo.example.com.p12"
+        path: "./foo.example.com.crt"
+        passphrase: "foobar"
+        select_crypto_backend: pyopenssl
+      check_mode: false
+      changed_when: false
