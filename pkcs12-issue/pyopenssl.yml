@@ -12,5 +12,3 @@
         path: "./foo.example.com.crt"
         passphrase: "foobar"
         select_crypto_backend: pyopenssl
-      check_mode: false
-      changed_when: false
