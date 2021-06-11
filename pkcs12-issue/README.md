@@ -106,3 +106,13 @@ fatal: [localhost]: FAILED! => {"ansible_facts": {"discovered_interpreter_python
 PLAY RECAP *************************************************************************************************************
 localhost                  : ok=0    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
 ```
+
+##### WORKAROUND
+Force use of old backend by adding the following to the
+`openssl_pkcs12` invokation:
+
+```text
+select_crypto_backend: pyopenssl
+```
+
+With this in place, our plays are running again.
