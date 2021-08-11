@@ -1,4 +1,4 @@
-helm_repository inherits module_defaults from k8s_info
+# helm_repository inherits module_defaults from k8s_info
 
 <!--- Verify first that your issue is not already reported on GitHub -->
 <!--- Also test if the latest release and devel branch are affected too -->
