@@ -108,7 +108,8 @@ PLAY RECAP *********************************************************************
 localhost                  : ok=0    changed=0    unreachable=0    failed=1    skipped=0    rescued=0    ignored=0   
 ```
 
-Running with verbatim logging, gives this, which might be a clue to what is happening:
+Running with verbatim logging, gives this, which might be a clue to
+what is happening (I'm just guessing):
 
 ```
 redirecting (type: action) kubernetes.core.helm_repository to kubernetes.core.k8s_info
