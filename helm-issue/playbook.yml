@@ -1,0 +1,13 @@
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  module_defaults:
+    kubernetes.core.k8s_info:
+      api_key: "API_KEY"
+
+  tasks:
+    - kubernetes.core.helm_repository:
+        name: bitnami
+        repo_url: "https://example.com"
