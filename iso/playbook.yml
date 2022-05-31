@@ -1,0 +1,19 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    trouble: æøå
+    props:
+      foo: "{{ trouble }}"
+      bar: gazonk
+      
+  tasks:
+    - name: Create properties file
+      ansible.builtin.template:
+        src: properties.j2
+        dest: properties.properties
+        output_encoding: iso-8859-1
