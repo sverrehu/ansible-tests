@@ -6,9 +6,10 @@
   gather_facts: false
   
   vars:
-    trouble: æøå
+    trouble: fooæøåbar
     props:
       foo: "{{ trouble }}"
+      foo2: "{{ trouble | to_json | regex_replace('^\"(.*)\"$', '\\1') }}"
       bar: gazonk
       
   tasks:
