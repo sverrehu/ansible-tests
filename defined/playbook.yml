@@ -1,0 +1,23 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    bar2: gazonk
+    foo: >
+      {{ bar is defined | ternary(bar,
+      bar2 is defined | ternary(bar2, '')) }}
+      
+  tasks:
+    - name: Print foo if not empty
+      shell: |
+        echo defined
+      when: (foo is defined) and (foo | length > 0)
+
+    - name: Print foo
+      debug:
+        var: foo
+

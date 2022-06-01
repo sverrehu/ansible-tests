@@ -1,0 +1,28 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    bar: gazonk/
+    bar2: ga/zonk
+
+  tasks:
+    - name: Remove trailing slash
+      set_fact:
+        foo: "{{ bar | regex_replace('/$', '') }}"
+
+    - name: Don't trailing slash
+      set_fact:
+        foo2: "{{ bar2 | regex_replace('/$', '') }}"
+
+    - name: Print foo
+      debug:
+        var: foo
+
+    - name: Print foo2
+      debug:
+        var: foo2
+
