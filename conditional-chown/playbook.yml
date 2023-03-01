@@ -1,0 +1,25 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    backup_protocol: nfs
+    backup_mount_path: /tmp/backup
+    backup_application_user: backup
+
+  tasks:
+    - name: Check owner of backup mount
+      ansible.builtin.stat:
+        path: "{{ backup_mount_path }}"
+      register: backup_mount_path_stat
+
+    - name: Set owner of all backup files
+      ansible.builtin.file:
+        path: "{{ backup_mount_path }}"
+        state: directory
+        owner: "{{ backup_application_user }}"
+        recurse: true
+      when: backup_protocol == 'nfs' and backup_mount_path_stat.stat.pw_name != backup_application_user
