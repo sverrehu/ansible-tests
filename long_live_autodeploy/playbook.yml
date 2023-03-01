@@ -1,0 +1,14 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  tasks:
+    - name: Long live autodeploy
+      ansible.builtin.user:
+        name: autodeploy
+        expires: -1
+        password_expire_min: -1
+        password_expire_max: -1

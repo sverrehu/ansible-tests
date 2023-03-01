@@ -1,0 +1,27 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    foo:
+      listen_addresses: '0.0.0.0'
+      password_encryption: scram-sha-256
+      
+  tasks:
+    - name: Print foo
+      debug:
+        var: foo
+    - name: Set fact
+      ansible.builtin.set_fact:
+        my_dict:
+          key: "{{ item.key }}"
+          value: "{{ item.value }}"
+      loop: "{{ foo | dict2items }}"
+    - name: Print my_doct
+      debug:
+        var: my_dict
+
+
