@@ -1,0 +1,26 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: true
+
+  vars:
+    hostnames:
+      - vg.no
+      - nrk.no
+      - uio.no
+    
+  tasks:
+    - name: Print input
+      debug:
+        var: hostnames
+
+    - name: Print query
+      debug:
+        var: query('community.general.dig', *hostnames)
+
+    - name: Print addresses
+      debug:
+        var: item
+      loop: "{{ query('community.general.dig', *hostnames) }}"
