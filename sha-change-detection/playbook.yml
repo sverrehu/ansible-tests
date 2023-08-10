@@ -1,0 +1,30 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    filename: "./foo"
+    generated_content: "Some generated stuff"
+
+  tasks:
+    - name: Load old checksum for {{ filename }}
+      ansible.builtin.slurp:
+        src: "{{ filename }}.sum"
+      ignore_errors: true
+      register: old_checksum_result
+    - name: Extract old and new checksums
+      ansible.builtin.set_fact:
+        old_checksum: "{{ old_checksum_result['content'] | default('') | b64decode | trim }}"
+        new_checksum: "{{ generated_content | sha1 }}"
+    - name: Checksums differ
+      when: old_checksum != new_checksum
+      block:
+        - name: Write new checksum file for {{ filename }}
+          ansible.builtin.copy:
+            content: "{{ new_checksum }}"
+            dest: "{{ filename }}.sum"
+            mode: '644'
+        # TODO: Add other tasks to perform when the content has changed
