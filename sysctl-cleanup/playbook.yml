@@ -1,0 +1,36 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  module_defaults:
+    kubernetes.core.k8s_info:
+      api_key: "API_KEY"
+
+  tasks:
+    - name: Remove settings from sysctl.conf files
+      ansible.builtin.lineinfile:
+        path: "{{ item.path }}"
+        line: "{{ item.line }}"
+        state: absent
+      loop:
+        - { path: "etc/sysctl.conf", line: "vm.swappiness=1" }
+        - { path: "etc/sysctl.conf", line: "vm.dirty_background_ratio=5" }
+        - { path: "etc/sysctl.conf", line: "vm.dirty_ratio=80" }
+        - { path: "etc/sysctl.conf", line: "vm.max_map_count=262144" }
+        - { path: "usr/lib/sysctl.d/sysctl.conf", line: "vm.swappiness=1" }
+        - { path: "usr/lib/sysctl.d/sysctl.conf", line: "vm.dirty_background_ratio=5" }
+        - { path: "usr/lib/sysctl.d/sysctl.conf", line: "vm.dirty_ratio=80" }
+        - { path: "usr/lib/sysctl.d/sysctl.conf", line: "vm.max_map_count=262144" }
+
+    - name: Get file size of /usr/lib/sysctl.d/sysctl.conf
+      ansible.builtin.stat:
+        path: usr/lib/sysctl.d/sysctl.conf
+      register: sysctl_stat
+
+    - name: Delete /usr/lib/sysctl.d/sysctl.conf if empty
+      ansible.builtin.file:
+        path: usr/lib/sysctl.d/sysctl.conf
+        state: absent
+      when: sysctl_stat.stat.size == 0

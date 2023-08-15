@@ -18,7 +18,7 @@
     - name: Extract old and new checksums
       ansible.builtin.set_fact:
         old_checksum: "{{ old_checksum_result['content'] | default('') | b64decode | trim }}"
-        new_checksum: "{{ generated_content | sha1 }}"
+        new_checksum: "{{ generated_content | sha1 | trim }}"
     - name: Checksums differ
       when: old_checksum != new_checksum
       block:
