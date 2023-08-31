@@ -19,3 +19,6 @@
       ansible.builtin.debug:
         var: fqdn_second_last
 
+    - name: Print variables combined
+      ansible.builtin.debug:
+        msg: "{{ fqdn_second_last + '.' + fqdn_last }}"
