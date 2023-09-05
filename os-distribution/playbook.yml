@@ -6,6 +6,14 @@
   gather_facts: true
   
   tasks:
-    - name: Print GNU/Linux distribution information
+    - name: Gather OS distribution facts
+      ansible.builtin.setup:
+        filter: "!all,!min,distribution,distribution_version"
+
+    - name: Print OS distribution
       ansible.builtin.debug:
-        msg: "OS Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+        msg: "{{ ansible_distribution }} {{ ansible_distribution_version }}"
+
+    - name: Print facts
+      ansible.builtin.debug:
+        var: ansible_facts
