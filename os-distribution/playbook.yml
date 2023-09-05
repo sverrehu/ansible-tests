@@ -1,0 +1,11 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: true
+  
+  tasks:
+    - name: Print GNU/Linux distribution information
+      ansible.builtin.debug:
+        msg: "OS Distribution: {{ ansible_distribution }} {{ ansible_distribution_version }}"
