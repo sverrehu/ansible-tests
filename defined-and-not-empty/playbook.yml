@@ -1,0 +1,27 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    foo:
+      - bar
+    bar: []
+      
+  tasks:
+    - name: Print foo if defined and not empty
+      ansible.builtin.debug:
+        msg: foo defined and not empty
+      when: foo is defined and foo | length > 0
+
+    - name: Print bar if defined and not empty
+      ansible.builtin.debug:
+        msg: bar defined and not empty
+      when: bar is defined and bar | length > 0
+
+    - name: Print gazonk if defined and not empty
+      ansible.builtin.debug:
+        msg: gazonk defined and not empty
+      when: gazonk is defined and gazonk | length > 0
