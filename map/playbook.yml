@@ -1,0 +1,19 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    foo: gazonk
+    foos:
+      - bar
+      - baz
+    mapped: "{{ ([foo] + foos) | map('regex_replace', '^', 'DNS:') }}"
+      
+  tasks:
+    - name: Print it
+      debug:
+        var: mapped
+

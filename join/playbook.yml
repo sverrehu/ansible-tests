@@ -1,0 +1,17 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    foo: gazonk
+    foos: []
+    joined: "{{ ([foo] + foos) | join(' ') }}"
+      
+  tasks:
+    - name: Print it
+      debug:
+        var: joined
+
