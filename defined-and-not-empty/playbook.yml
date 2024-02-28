@@ -9,6 +9,7 @@
     foo:
       - bar
     bar: []
+    n: null
       
   tasks:
     - name: Print foo if defined and not empty
@@ -25,3 +26,8 @@
       ansible.builtin.debug:
         msg: gazonk defined and not empty
       when: gazonk is defined and gazonk | length > 0
+
+    - name: Print n if not null
+      ansible.builtin.debug:
+        msg: n is not null
+      when: n != None

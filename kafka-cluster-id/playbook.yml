@@ -1,0 +1,16 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    seed: gazonk
+    cluster_id: "{{ (seed | hash('sha1'))[:16] | b64encode | regex_replace('=+$', '') }}"
+      
+  tasks:
+    - name: Print it
+      debug:
+        var: cluster_id
+
