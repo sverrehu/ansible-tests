@@ -1,0 +1,22 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    foo: foo
+      
+  tasks:
+    - name: Set temp, updated var
+      ansible.builtin.set_fact:
+        updated_foo: "{{ foo }}-bar"
+    - name: Print foo as updated_foo
+      vars:
+        foo: "{{ updated_foo }}"
+      ansible.builtin.debug:
+        msg: "foo: {{ foo }}"
+    - name: Print foo
+      ansible.builtin.debug:
+        msg: "foo: {{ foo }}"
