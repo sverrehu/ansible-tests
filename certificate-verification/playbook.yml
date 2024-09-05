@@ -1,0 +1,24 @@
+# ansible-playbook -i localhost, playbook.yml
+# UNFINISHED
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    cert_filename: foo.example.com.crt
+    key_filename: foo.example.com.key
+    expected_dns_sans:
+      - foo.example.com
+      - bar.example.com
+      - baz.example.com
+
+  tasks:
+    - name: Identify new certificate file
+      community.crypto.x509_certificate_info:
+        path: "{{ cert_filename }}"
+      register: cert_info
+
+    - name: Print fingerprint of new cert
+      debug:
+        var: cert_info.subject_alt_name
