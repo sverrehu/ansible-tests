@@ -14,11 +14,24 @@
       - baz.example.com
 
   tasks:
-    - name: Identify new certificate file
+    - name: Extract certificate info
       community.crypto.x509_certificate_info:
         path: "{{ cert_filename }}"
       register: cert_info
 
-    - name: Print fingerprint of new cert
-      debug:
-        var: cert_info.subject_alt_name
+    - name: Ensure expected SANs present
+      ansible.builtin.assert:
+        that: "{{ ('DNS:' + item) in cert_info.subject_alt_name }}"
+      loop: "{{ expected_dns_sans }}"
+      when: expected_dns_sans is defined
+
+    - name: Check that certificate and key fingerprints match
+      when: key_filename is defined
+      block:
+        - name: Get key info
+          community.crypto.openssl_privatekey_info:
+            path: "{{ key_filename }}"
+          register: key_info
+        - name: Assert fingerprints are equal
+          ansible.builtin.assert:
+            that: "{{ cert_info.public_key_fingerprints.sha256 == key_info.public_key_fingerprints.sha256 }}"
