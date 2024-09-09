@@ -22,6 +22,7 @@
     - name: Ensure expected SANs present
       ansible.builtin.assert:
         that: "{{ ('DNS:' + item) in cert_info.subject_alt_name }}"
+        fail_msg: Expected Subject Alternative Name (SAN) '{{ item }}' not present in certificate
       loop: "{{ expected_dns_sans }}"
       when: expected_dns_sans is defined and expected_dns_sans | length > 0
 
