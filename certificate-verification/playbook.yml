@@ -23,7 +23,7 @@
       ansible.builtin.assert:
         that: "{{ ('DNS:' + item) in cert_info.subject_alt_name }}"
       loop: "{{ expected_dns_sans }}"
-      when: expected_dns_sans is defined
+      when: expected_dns_sans is defined and expected_dns_sans | length > 0
 
     - name: Check that certificate and key fingerprints match
       when: key_filename is defined
