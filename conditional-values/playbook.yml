@@ -1,0 +1,23 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    add_extra: false
+    value: "value"
+    default_object:
+      some: "some"
+      other: "other"
+      and_then_some: "and_then_some"
+    extra_object:
+      the_value:
+        value: "{{ value }}"
+    object: "{{ default_object | combine(add_extra | ternary(extra_object, {})) }}"
+    
+  tasks:
+    - name: Print object
+      ansible.builtin.debug:
+        var: object
