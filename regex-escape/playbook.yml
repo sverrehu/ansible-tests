@@ -1,0 +1,24 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    current_metadata: "SupportedMinVersion: 1.2.3"
+    
+  tasks:
+    - name: Extract
+      ansible.builtin.set_fact:
+        supported_min_version: >-
+          {{
+            current_metadata
+              | regex_search('SupportedMinVersion:\s+(\S+)', '\1')
+              | first
+              | default('n/a')
+          }}
+
+    - name: Print object
+      ansible.builtin.debug:
+        var: supported_min_version
