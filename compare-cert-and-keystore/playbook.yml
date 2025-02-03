@@ -6,10 +6,9 @@
   connection: local
   gather_facts: false
   vars:
-    cert_and_keystore:
-      cert_path: ./new.crt
-      keystore_path: ./old.p12
-      keystore_storepass: foobar
+    cert_and_keystore_check_cert_path: ./new.crt
+    cert_and_keystore_check_keystore_path: ./old.p12
+    cert_and_keystore_check_keystore_storepass: foobar
 
   tasks:
     - name: Assume we do not need to regenerate
@@ -18,37 +17,40 @@
 
     - name: Check if keystore exists
       stat:
-        path: "{{ cert_and_keystore.keystore_path }}"
+        path: "{{ cert_and_keystore_check_keystore_path }}"
       register: keystore_stat
 
     - name: Need to regenerate if keystore is missing
       set_fact:
         regenerate_keystore_and_truststore: true
       when: not keystore_stat.stat.exists
-      
+
     - name: Examine keystore...
+      when: keystore_stat.stat.exists
       block:
-        - name: Identify new certificate file
+        - name: Identify new certificate file {{ cert_and_keystore_check_cert_path }}
           community.crypto.x509_certificate_info:
-            path: "{{ cert_and_keystore.cert_path }}"
+            path: "{{ cert_and_keystore_check_cert_path }}"
           register: new_crt
 
         - name: Print fingerprint of new cert
-          debug:
+          ansible.builtin.debug:
             var: new_crt.fingerprints
 
         - name: Create temp file for the certificate in the keystore
-          tempfile:
+          ansible.builtin.tempfile:
             suffix: .pem
           register: old_crt_file
+          check_mode: false
           changed_when: false
 
-        - name: Extract old certificate from PKCS#12
+        - name: Extract old certificate from PKCS#12 file {{ cert_and_keystore_check_keystore_path }}
           community.crypto.openssl_pkcs12:
             action: parse
-            src: "{{ cert_and_keystore.keystore_path }}"
+            src: "{{ cert_and_keystore_check_keystore_path }}"
             path: "{{ old_crt_file.path }}"
-            passphrase: "{{ cert_and_keystore.keystore_storepass }}"
+            passphrase: "{{ cert_and_keystore_check_keystore_storepass }}"
+          check_mode: false
           changed_when: false
 
         - name: Identify old certificate file
@@ -57,23 +59,22 @@
           register: old_crt
 
         - name: Print fingerprint of old cert
-          debug:
+          ansible.builtin.debug:
             var: old_crt.fingerprints
 
         - name: Delete temp file
-          file:
+          ansible.builtin.file:
             path: "{{ old_crt_file.path }}"
             state: absent
+          check_mode: false
           changed_when: false
 
         - name: Set whether keystore needs to be regenerated
-          set_fact:
+          ansible.builtin.set_fact:
             regenerate_keystore_and_truststore: true
           when: (old_crt.fingerprints != new_crt.fingerprints) | bool
 
-      when: keystore_stat.stat.exists
-
     - name: Print if keystore needs to be rebuilt
-      debug:
+      ansible.builtin.debug:
         var: regenerate_keystore_and_truststore
 
