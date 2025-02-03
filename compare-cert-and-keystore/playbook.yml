@@ -9,6 +9,11 @@
     cert_and_keystore_check_cert_path: ./new.crt
     cert_and_keystore_check_keystore_path: ./old.p12
     cert_and_keystore_check_keystore_storepass: foobar
+    cert_and_keystore_check_truststore_path: ./trust12.jks
+    cert_and_keystore_check_ca_certs:
+      - ./ca1.crt
+      - ./ca2.crt
+    cert_and_keystore_check_truststore_storepass: foobar
 
   tasks:
     - name: Assume we do not need to regenerate
@@ -70,6 +75,72 @@
           changed_when: false
 
         - name: Set whether keystore needs to be regenerated
+          ansible.builtin.set_fact:
+            regenerate_keystore_and_truststore: true
+          when: (old_crt.fingerprints != new_crt.fingerprints) | bool
+
+    - name: Check if truststore exists
+      stat:
+        path: "{{ cert_and_keystore_check_truststore_path }}"
+      register: truststore_stat
+
+    - name: Examine truststore...
+      when: truststore_stat.stat.exists
+      block:
+        - name: Create fingerprint variables
+          ansible.builtin.set_fact:
+            _ca_files_fingerprints: []
+            _truststore_fingerprints: []
+
+        - name: Collect CA certificate fingerprints
+          block:
+            - name: Identify new certificate file {{ cert_and_keystore_check_cert_path }}
+              community.crypto.x509_certificate_info:
+                path: "{{ cert_and_keystore_check_cert_path }}"
+              register: _ca_fingerprint
+
+            - name: Store CA fingerprint
+              ansible.builtin.set_fact:
+                _ca_files_fingerprints: "{{ _ca_files_fingerprints.append(_ca_fingerprint) }}"
+          loop: cert_and_keystore_check_ca_certs
+
+        - name: Print CA fingerprints
+          ansible.builtin.debug:
+            var: _ca_files_fingerprints
+
+        - name: Create temp file for the certificate in the truststore
+          ansible.builtin.tempfile:
+            suffix: .pem
+          register: old_crt_file
+          check_mode: false
+          changed_when: false
+
+        - name: Extract old certificate from PKCS#12 file {{ cert_and_keystore_check_truststore_path }}
+          community.crypto.openssl_pkcs12:
+            action: parse
+            src: "{{ cert_and_keystore_check_truststore_path }}"
+            path: "{{ old_crt_file.path }}"
+            passphrase: "{{ cert_and_keystore_check_truststore_storepass }}"
+          check_mode: false
+          changed_when: false
+
+        - name: Identify old certificate file
+          community.crypto.x509_certificate_info:
+            path: "{{ old_crt_file.path }}"
+          register: old_crt
+
+        - name: Print fingerprint of old cert
+          ansible.builtin.debug:
+            var: old_crt.fingerprints
+
+        - name: Delete temp file
+          ansible.builtin.file:
+            path: "{{ old_crt_file.path }}"
+            state: absent
+          check_mode: false
+          changed_when: false
+
+        - name: Set whether truststore needs to be regenerated
           ansible.builtin.set_fact:
             regenerate_keystore_and_truststore: true
           when: (old_crt.fingerprints != new_crt.fingerprints) | bool
