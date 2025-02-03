@@ -1,0 +1,41 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    oracle_instantclient_version: 19.8
+      
+  tasks:
+    - name: Get sqlplus version
+      ansible.builtin.command: echo -e 'foo 19.0.0\nbar 19.8.0'
+      register: sqlplus_version
+      changed_when: false
+
+    - name: Print foo
+      ansible.builtin.debug:
+        var: sqlplus_version.stdout
+
+    - name: Set whether expected version is found
+      ansible.builtin.set_fact:
+        sqlplus_version_found: "{{ oracle_instantclient_version | string in sqlplus_version.stdout }}"
+
+    - name: Debug
+      ansible.builtin.debug:
+        var: sqlplus_version_found
+
+    - name: Verify install and version
+      ansible.builtin.assert:
+        that: "sqlplus_version_found"
+        
+    - name: Debug
+      ansible.builtin.debug:
+        var: inventory_dir
+        
+    - name: Debug
+      ansible.builtin.debug:
+        var: playbook_dir
+        
+

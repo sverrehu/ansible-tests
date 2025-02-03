@@ -9,6 +9,9 @@
     foo:
       listen_addresses: '0.0.0.0'
       password_encryption: scram-sha-256
+    tuples:
+      - ("key1", "value1")
+      - ("key2", "value2")
       
   tasks:
     - name: Print foo
@@ -20,8 +23,14 @@
           key: "{{ item.key }}"
           value: "{{ item.value }}"
       loop: "{{ foo | dict2items }}"
-    - name: Print my_doct
+    - name: Set fact
+      ansible.builtin.set_fact:
+        my_dict_from_tuples: "{{ tuples | map('items2dict') | items2dict}}"
+    - name: Print my_dict
       debug:
         var: my_dict
+    - name: Print my_dict_from_tuples
+      debug:
+        var: my_dict_from_tuples
 
 
