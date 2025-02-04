@@ -102,7 +102,7 @@
           ansible.builtin.debug:
             var: _ca_files_fingerprints
 
-        - name: Create temp file to hold the certificate in the truststore
+        - name: Create temp file to hold the certificates in the truststore
           ansible.builtin.tempfile:
             suffix: .pem
           register: truststore_crt_file
