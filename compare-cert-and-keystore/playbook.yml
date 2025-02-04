@@ -141,7 +141,7 @@
           ansible.builtin.set_fact:
             regenerate_keystore_and_truststore: true
           when: >-
-            _ca_files_fingerprints | community.general.lists_difference(_truststore_fingerprints) | length > 0
+            _ca_files_fingerprints | length != _truststore_fingerprints | length
             or _truststore_fingerprints | community.general.lists_difference(_ca_files_fingerprints) | length > 0
 
     - name: Print if keystore needs to be rebuilt
