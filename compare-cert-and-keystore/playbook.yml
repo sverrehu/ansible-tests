@@ -80,7 +80,7 @@
           when: (old_crt.fingerprints != new_crt.fingerprints) | bool
 
     - name: Check if truststore exists
-      stat:
+      ansible.builtin.stat:
         path: "{{ cert_and_keystore_check_truststore_path }}"
       register: truststore_stat
 
@@ -93,7 +93,7 @@
             _truststore_fingerprints: []
 
         - name: Collect CA certificate fingerprints
-          include_tasks: cert_and_keystore_check_ca_fingerprints.yml
+          ansible.builtin.include_tasks: cert_and_keystore_check_ca_fingerprints.yml
           loop: "{{ cert_and_keystore_check_ca_certs }}"
           loop_control:
             loop_var: _cert_path
@@ -120,7 +120,7 @@
           changed_when: false
 
         - name: Collect truststore-based CA certificate fingerprints
-          include_tasks: cert_and_keystore_check_truststore_fingerprints.yml
+          ansible.builtin.include_tasks: cert_and_keystore_check_truststore_fingerprints.yml
           # Splitting the PEM from the previous step into individual certificates.
           loop: "{{ lookup('ansible.builtin.file', truststore_crt_file.path) | community.crypto.split_pem }}"
           loop_control:
