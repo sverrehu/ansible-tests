@@ -6,10 +6,10 @@
   connection: local
   gather_facts: false
   vars:
-    cert_and_keystore_check_cert_path: ./new.crt
+    cert_and_keystore_check_cert_path: ./old.crt
     cert_and_keystore_check_keystore_path: ./old.p12
     cert_and_keystore_check_keystore_storepass: foobar
-    cert_and_keystore_check_truststore_path: ./trust12.jks
+    cert_and_keystore_check_truststore_path: ./trust-ca12.jks
     cert_and_keystore_check_ca_certs:
       - ./ca1.crt
       - ./ca2.crt
@@ -87,55 +87,52 @@
     - name: Examine truststore...
       when: truststore_stat.stat.exists
       block:
-        - name: Create fingerprint variables
+        - name: Create fingerprint collection lists
           ansible.builtin.set_fact:
             _ca_files_fingerprints: []
             _truststore_fingerprints: []
 
         - name: Collect CA certificate fingerprints
-          block:
-            - name: Identify new certificate file {{ cert_and_keystore_check_cert_path }}
-              community.crypto.x509_certificate_info:
-                path: "{{ cert_and_keystore_check_cert_path }}"
-              register: _ca_fingerprint
-
-            - name: Store CA fingerprint
-              ansible.builtin.set_fact:
-                _ca_files_fingerprints: "{{ _ca_files_fingerprints.append(_ca_fingerprint) }}"
-          loop: cert_and_keystore_check_ca_certs
+          include_tasks: cert_and_keystore_check_ca_fingerprints.yml
+          loop: "{{ cert_and_keystore_check_ca_certs }}"
+          loop_control:
+            loop_var: _cert_path
 
         - name: Print CA fingerprints
           ansible.builtin.debug:
             var: _ca_files_fingerprints
 
-        - name: Create temp file for the certificate in the truststore
+        - name: Create temp file to hold the certificate in the truststore
           ansible.builtin.tempfile:
             suffix: .pem
-          register: old_crt_file
+          register: truststore_crt_file
           check_mode: false
           changed_when: false
 
-        - name: Extract old certificate from PKCS#12 file {{ cert_and_keystore_check_truststore_path }}
+        - name: Extract old CA certificates from truststore {{ cert_and_keystore_check_truststore_path }}
+          # Will create a single PEM file with all certificates, one after the other.
           community.crypto.openssl_pkcs12:
             action: parse
             src: "{{ cert_and_keystore_check_truststore_path }}"
-            path: "{{ old_crt_file.path }}"
+            path: "{{ truststore_crt_file.path }}"
             passphrase: "{{ cert_and_keystore_check_truststore_storepass }}"
           check_mode: false
           changed_when: false
 
-        - name: Identify old certificate file
-          community.crypto.x509_certificate_info:
-            path: "{{ old_crt_file.path }}"
-          register: old_crt
+        - name: Collect truststore-based CA certificate fingerprints
+          include_tasks: cert_and_keystore_check_truststore_fingerprints.yml
+          # Splitting the PEM from the previous step into individual certificates.
+          loop: "{{ lookup('ansible.builtin.file', truststore_crt_file.path) | community.crypto.split_pem }}"
+          loop_control:
+            loop_var: _cert_content
 
-        - name: Print fingerprint of old cert
+        - name: Print truststore CA fingerprints
           ansible.builtin.debug:
-            var: old_crt.fingerprints
+            var: _truststore_fingerprints
 
         - name: Delete temp file
           ansible.builtin.file:
-            path: "{{ old_crt_file.path }}"
+            path: "{{ truststore_crt_file.path }}"
             state: absent
           check_mode: false
           changed_when: false
@@ -143,7 +140,9 @@
         - name: Set whether truststore needs to be regenerated
           ansible.builtin.set_fact:
             regenerate_keystore_and_truststore: true
-          when: (old_crt.fingerprints != new_crt.fingerprints) | bool
+          when: >-
+            _ca_files_fingerprints | community.general.lists_difference(_truststore_fingerprints) | length > 0
+            or _truststore_fingerprints | community.general.lists_difference(_ca_files_fingerprints) | length > 0
 
     - name: Print if keystore needs to be rebuilt
       ansible.builtin.debug:
