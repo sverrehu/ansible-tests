@@ -1,9 +1,9 @@
 ---
 - name: Get fingerprints from new CA certificate file {{ _cert_path }}
   community.crypto.x509_certificate_info:
-    path: "{{ _cert_path }}"
+    content: "{{ _cert_content }}"
   register: _ca_info
 
 - name: Store CA fingerprint
   ansible.builtin.set_fact:
-    _ca_files_fingerprints: "{{ _ca_files_fingerprints + [ _ca_info.fingerprints ] }}"
+    _ca_files_fingerprints: "{{ _ca_files_fingerprints + [_ca_info.fingerprints] }}"

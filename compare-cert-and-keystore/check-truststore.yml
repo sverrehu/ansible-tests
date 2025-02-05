@@ -1,0 +1,68 @@
+---
+- name: Check if truststore exists
+  ansible.builtin.stat:
+    path: "{{ cert_and_keystore_check_truststore_path }}"
+  register: truststore_stat
+
+- name: Examine truststore...
+  when: truststore_stat.stat.exists
+  block:
+    - name: Create fingerprint collection lists
+      ansible.builtin.set_fact:
+        _ca_files_fingerprints: []
+        _truststore_fingerprints: []
+
+    - name: Slurp CA cert bundle
+      ansible.builtin.slurp:
+        src: "{{ cert_and_keystore_check_ca_certs }}"
+      register: cacerts_pem_contents
+
+    - name: Collect CA certificate fingerprints
+      ansible.builtin.include_tasks: extract_ca_fingerprint.yml
+      # Splitting the PEM from the previous step into individual certificates.
+      loop: "{{ cacerts_pem_contents.content | b64decode | community.crypto.split_pem }}"
+      loop_control:
+        loop_var: _cert_content
+
+    - name: Create temp file to hold the certificates in the truststore
+      ansible.builtin.tempfile:
+        suffix: .pem
+      register: truststore_crt_file
+      check_mode: false
+      changed_when: false
+
+    - name: Extract old CA certificates from truststore
+      # Will create a single PEM file with all certificates, one after the other.
+      community.crypto.openssl_pkcs12:
+        action: parse
+        src: "{{ cert_and_keystore_check_truststore_path }}"
+        path: "{{ truststore_crt_file.path }}"
+        passphrase: "{{ cert_and_keystore_check_truststore_storepass }}"
+      check_mode: false
+      changed_when: false
+
+    - name: Slurp truststore certificates
+      ansible.builtin.slurp:
+        src: "{{ truststore_crt_file.path }}"
+      register: truststore_pem_contents
+
+    - name: Collect truststore-based CA certificate fingerprints
+      ansible.builtin.include_tasks: extract_truststore_fingerprint.yml
+      # Splitting the PEM from the previous step into individual certificates.
+      loop: "{{ truststore_pem_contents.content | b64decode | community.crypto.split_pem }}"
+      loop_control:
+        loop_var: _cert_content
+
+    - name: Delete temp file
+      ansible.builtin.file:
+        path: "{{ truststore_crt_file.path }}"
+        state: absent
+      check_mode: false
+      changed_when: false
+
+    - name: Set whether truststore needs to be regenerated
+      ansible.builtin.set_fact:
+        regenerate_keystore_and_truststore: true
+      when: >-
+        _ca_files_fingerprints | length != _truststore_fingerprints | length
+        or _truststore_fingerprints | community.general.lists_difference(_ca_files_fingerprints) | length > 0
