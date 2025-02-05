@@ -19,11 +19,11 @@
         regenerate_keystore_and_truststore: false
 
     - name: Check keystore
-      ansible.builtin.include_tasks: check-keystore.yml
+      ansible.builtin.include_tasks: check_keystore.yml
       when: not regenerate_keystore_and_truststore
 
     - name: Check truststore
-      ansible.builtin.include_tasks: check-truststore.yml
+      ansible.builtin.include_tasks: check_truststore.yml
       when: not regenerate_keystore_and_truststore
 
     - name: Print if keystore and/or truststore need to be rebuilt
