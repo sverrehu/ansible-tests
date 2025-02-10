@@ -1,0 +1,32 @@
+# ansible-playbook -i localhost, playbook.yml
+# Should result if "true" for "new.crt", and "false" for "old.crt"
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    binary_base_path: /opt/kafka
+    clusterid: RoWJwrQfRSaBMmb75wDqEw
+    kafka_broker:
+      config_file: ./server.properties
+
+  tasks:
+    - name: Format Storage Directory
+      shell: "{{ binary_base_path }}/bin/kafka-storage format -t={{ clusterid }} -c {{ kafka_broker.config_file }} --ignore-formatted"
+      register: format_meta
+      changed_when: format_meta.stdout_lines is not search('already formatted', multiline=true)
+
+    - name: Dump stdout
+      ansible.builtin.debug:
+        var: format_meta.stdout
+
+    - name: Set conditional
+      ansible.builtin.set_fact:
+        is_changed: "{{ format_meta.stdout_lines is not search('already formatted', multiline=true) }}"
+
+    - name: Dump conditional
+      ansible.builtin.debug:
+        var: is_changed
+
+        
