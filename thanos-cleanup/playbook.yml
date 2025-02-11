@@ -28,12 +28,11 @@
 
     - name: Collect files/directories to remove
       ansible.builtin.set_fact:
-        thanos_dist_files_to_remove: >-
-          {{ thanos_dist_files_to_remove
-             + (item.path | basename == thanos_release_name
-                or item.path | basename == thanos_download_fn)
-             | ternary([], [item.path]) }}
+        thanos_dist_files_to_remove: "{{ thanos_dist_files_to_remove + [item.path] }}"
       loop: "{{ thanos_dist_dir_files.files }}"
+      when:
+        - item.path | basename != thanos_release_name
+        - item.path | basename != thanos_download_fn
 
     - name: Print
       ansible.builtin.debug:
