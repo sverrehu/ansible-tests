@@ -1,0 +1,39 @@
+# ansible-playbook -i localhost, playbook.yml
+# Should result if "true" for "new.crt", and "false" for "old.crt"
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    thanos_version: "0.37.2"
+    thanos_root_dir: "./thanos"
+    thanos_dist_dir: "{{ thanos_root_dir }}/dist"
+    thanos_bin_dir: "{{ thanos_root_dir }}/current"
+    thanos_platform: "linux-amd64"
+    thanos_release_name: "thanos-{{ thanos_version }}.{{ thanos_platform }}"
+    thanos_download_fn: "{{ thanos_release_name }}.tar.gz"
+
+  tasks:
+    - name: Find distribution files and directories
+      ansible.builtin.find:
+        paths: "{{ thanos_dist_dir }}"
+        file_type: any
+      register: thanos_dist_dir_files
+
+    - name: Create empty list of files/directories to remove
+      ansible.builtin.set_fact:
+        thanos_dist_files_to_remove: []
+
+    - name: Collect files/directories to remove
+      ansible.builtin.set_fact:
+        thanos_dist_files_to_remove: >-
+          {{ thanos_dist_files_to_remove
+             + (item.path | basename == thanos_release_name
+                or item.path | basename == thanos_download_fn)
+             | ternary([], [item.path]) }}
+      loop: "{{ thanos_dist_dir_files.files }}"
+
+    - name: Print
+      ansible.builtin.debug:
+        var: thanos_dist_files_to_remove
