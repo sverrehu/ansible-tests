@@ -18,6 +18,7 @@
     - name: Find distribution files and directories
       ansible.builtin.find:
         paths: "{{ thanos_dist_dir }}"
+        patterns: "thanos-*"
         file_type: any
       register: thanos_dist_dir_files
 
