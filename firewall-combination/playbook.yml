@@ -1,0 +1,45 @@
+# ansible-playbook -i localhost, playbook.yml
+# Should result if "true" for "new.crt", and "false" for "old.crt"
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    firewalld_zone_private_ports:
+      - port: 1
+      - port: 2
+        state: enabled
+      - port: 3
+        state: absent
+    firewalld_public_ports:
+      - port: 4
+      - port: 5
+        state: enabled
+      - port: 2
+        state: absent
+      - port: 3
+        state: enabled
+      - port: 6
+        state: absent
+
+  tasks:
+    - name: Create empty list of ports to add
+      ansible.builtin.set_fact:
+        firewalld_zone_additional_private_ports: []
+
+    - name: Collect ports to add
+      ansible.builtin.set_fact:
+        firewalld_zone_additional_private_ports: "{{ firewalld_zone_additional_private_ports + [item] }}"
+      loop: "{{ firewalld_public_ports }}"
+      when:
+        - item.state is not defined or item.state == 'enabled'
+        - not item.port in (firewalld_zone_private_ports | map(attribute='port'))
+
+    - name: Print
+      ansible.builtin.debug:
+        var: firewalld_public_ports | map(attribute='port')
+
+    - name: Print
+      ansible.builtin.debug:
+        var: firewalld_zone_additional_private_ports
