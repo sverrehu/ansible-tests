@@ -1,5 +1,4 @@
 # ansible-playbook -i localhost, playbook.yml
-# Should result if "true" for "new.crt", and "false" for "old.crt"
 ---
 - name: Test
   hosts: localhost
