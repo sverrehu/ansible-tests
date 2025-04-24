@@ -1,0 +1,15 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    prometheus_version: 3.3.0
+    prometheus_package_name: prometheus{{ prometheus_version[0] }}-{{ prometheus_version }}
+    
+  tasks:
+    - name: Print object
+      ansible.builtin.debug:
+        var: prometheus_package_name
