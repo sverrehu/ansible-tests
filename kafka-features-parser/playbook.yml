@@ -1,0 +1,36 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    current_features:
+      stdout: |
+        Feature: eligible.leader.replicas.version	SupportedMinVersion: 0	SupportedMaxVersion: 1	FinalizedVersionLevel: 0	Epoch: 32865924
+        Feature: group.version	SupportedMinVersion: 0	SupportedMaxVersion: 1	FinalizedVersionLevel: 0	Epoch: 32865924
+        Feature: kraft.version	SupportedMinVersion: 0	SupportedMaxVersion: 1	FinalizedVersionLevel: 0	Epoch: 32865924
+        Feature: metadata.version	SupportedMinVersion: 3.3-IV3	SupportedMaxVersion: 4.0-IV3	FinalizedVersionLevel: 3.9-IV0	Epoch: 32865924
+        Feature: transaction.version	SupportedMinVersion: 0	SupportedMaxVersion: 2	FinalizedVersionLevel: 0	Epoch: 32865924
+    xcurrent_features:
+      stdout: |
+        Feature: kraft.version	SupportedMinVersion: 0	SupportedMaxVersion: 1	FinalizedVersionLevel: 0	Epoch: 32859843
+        Feature: metadata.version	SupportedMinVersion: UNKNOWN 1	SupportedMaxVersion: 3.9-IV0	FinalizedVersionLevel: 3.9-IV0	Epoch: 32859843
+    
+  tasks:
+    - name: Get Kafka feature metadata.version
+      ansible.builtin.set_fact:
+        metadata_version_enabled: "{{ 'metadata.version' in current_features.stdout }}"
+        metadata_versions: >-
+          {{
+            dict(current_features.stdout
+              | regex_search('Feature: metadata.version.*$', multiline=true)
+              | regex_findall('(SupportedMinVersion|SupportedMaxVersion|FinalizedVersionLevel):\s+(\S+)')
+            )
+          }}
+      when: current_features is defined
+
+    - name: Print object
+      ansible.builtin.debug:
+        var: metadata_versions
