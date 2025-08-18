@@ -1,0 +1,21 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  tasks:
+    - name: Find old log files
+      ansible.builtin.find:
+        paths:
+          - /home/sverrehu/projects/sverrehu/ansible-tests/find/log
+        patterns:
+          - "*.2025-*"
+          - "*.[4-9]"
+          - "*.0"
+      register: _find_old_log_files
+    - name: Print files
+      ansible.builtin.debug:
+        var: "{{ item }}"
+      loop: "{{ _find_old_log_files.files | map(attribute='path') | list }}"
