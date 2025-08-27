@@ -1,0 +1,15 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  tasks:
+    - name: Find old log files
+      ansible.builtin.replace:
+        path: log4j2.yaml
+        regexp: "%d\\{yyyy-MM-dd-HH\\}"
+        replace: "%i"
+      check_mode: true
+      diff: true

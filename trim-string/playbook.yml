@@ -1,0 +1,18 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    text: "ab-cd"
+    
+  tasks:
+    - name: Modify text
+      ansible.builtin.set_fact:
+        modified_text: "{{ text[:3] }}"
+
+    - name: Print
+      ansible.builtin.debug:
+        var: modified_text
