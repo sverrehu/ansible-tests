@@ -1,0 +1,64 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    kafka_endpoints_stdout_lines:
+      - ID         HOST                        PORT       RACK STATE      ENDPOINT_TYPE  
+      - 2          broker02.example.com 9094       h1 fenced     broker         
+      - 3          broker03.example.com 9094       h1 fenced     broker         
+      - 11         broker11.example.com 9094       h1 unfenced   broker         
+      - 12         broker12.example.com 9094       h1 unfenced   broker         
+      - 13         broker13.example.com 9094       h1 unfenced   broker         
+    old_kafka_brokers:
+      - broker01.example.com:
+          broker_id: 1
+      - broker02.example.com:
+          broker_id: 2
+    fenced_broker_list: []
+    normalized_input_list: []
+    filtered_broker_list: []
+
+  tasks:
+    - name: Extract hosts in fenced state
+      ansible.builtin.set_fact:
+        fenced_broker_list: "{{ fenced_broker_list  + [{'broker_id': fenced_broker[0] | int, 'host': fenced_broker[1]}] }}"
+      loop: >-
+        {{
+          kafka_endpoints_stdout_lines
+          | map('split')
+          | selectattr(4, 'equalto', 'fenced')
+          | list
+        }}
+      loop_control:
+        loop_var: fenced_broker
+
+    - name: Show next loop expression
+      ansible.builtin.debug:
+        msg: "{{ old_kafka_brokers | map('dict2items') | map('first') | list }}"
+
+    - name: Normalize input broker list
+      ansible.builtin.set_fact:
+        normalized_input_list: "{{ normalized_input_list + [{'host': input_broker.key, 'broker_id': input_broker.value.broker_id | int} ] }}"
+      loop: "{{ old_kafka_brokers | map('dict2items') | map('first') | list }}"
+      loop_control:
+        loop_var: input_broker
+
+    - name: Status of registered Kafka endpoints in fenced state
+      ansible.builtin.debug:
+        var: fenced_broker_list
+
+    - name: Status of input broker list
+      ansible.builtin.debug:
+        var: normalized_input_list
+
+    - name: Filter input broker list with captured endpoints
+      ansible.builtin.set_fact:
+        filtered_broker_list: "{{ fenced_broker_list | intersect(normalized_input_list) }}"
+
+    - name: Debug broker list to be unregistered
+      ansible.builtin.debug:
+        var: filtered_broker_list
