@@ -1,0 +1,27 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    list1: [ { a: 1, b: 1 }, { a: 2, b: 2 }, { a: 3, b: 3 } ]
+    list2: [ { b: 2, a: 2 }, { a: 3, b: 3 }, { a: 4, b: 4 } ]
+
+  tasks:
+    - name: Show list1
+      ansible.builtin.debug:
+        var: list1
+
+    - name: Show list2
+      ansible.builtin.debug:
+        var: list2
+
+    - name: Filter input broker list with captured endpoints
+      ansible.builtin.set_fact:
+        intersection: "{{ list1 | intersect(list2) }}"
+
+    - name: Show intersect
+      ansible.builtin.debug:
+        var: intersection
