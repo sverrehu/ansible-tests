@@ -1,0 +1,16 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    version: enterprise-1.2.3
+    has_substring: "{{ 'enterprise-' in version }}"
+      
+  tasks:
+    - name: Print it
+      ansible.builtin.debug:
+        var: has_substring
+
