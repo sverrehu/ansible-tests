@@ -12,7 +12,7 @@
 
   tasks:
     - name: Format Storage Directory
-      shell: "{{ binary_base_path }}/bin/kafka-storage format -t={{ clusterid }} -c {{ kafka_broker.config_file }} --ignore-formatted"
+      ansible.builtin.command: "{{ binary_base_path }}/bin/kafka-storage format -t={{ clusterid }} -c {{ kafka_broker.config_file }} --ignore-formatted"
       register: format_meta
       changed_when: format_meta.stdout_lines is not search('already formatted', multiline=true)
 
