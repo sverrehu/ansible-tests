@@ -1,0 +1,31 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  
+  vars:
+    changed_when_true: true
+    changed_when_false: false
+    
+  tasks:
+    - name: Changed when true
+      ansible.builtin.command: /bin/true
+      notify: Changed when true handler
+      changed_when: changed_when_true | bool
+
+    - name: Changed when false
+      ansible.builtin.command: /bin/true
+      notify: Changed when false handler
+      changed_when: changed_when_false | bool
+
+  handlers:
+    - name: Changed when true handler
+      ansible.builtin.debug:
+        msg: Handler called when changed_when is true
+
+    - name: Changed when false handler
+      ansible.builtin.debug:
+        msg: Handler called when changed_when is false
+      
