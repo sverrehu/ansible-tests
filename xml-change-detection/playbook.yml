@@ -24,6 +24,7 @@
         src: "{{ filename }}"
         dest: "{{ filename }}.tmp"
         remote_src: true
+        mode: "0600"
       changed_when: false
     - name: Configure configuration
       community.general.xml:
@@ -68,6 +69,7 @@
             src: "{{ filename }}.tmp"
             dest: "{{ filename }}"
             remote_src: true
+            mode: "0600"
         # TODO: Add other tasks to perform when the content has changed
     - name: Delete temporary file
       ansible.builtin.file:
