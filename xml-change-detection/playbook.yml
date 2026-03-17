@@ -1,0 +1,74 @@
+# ansible-playbook -i localhost, playbook.yml
+---
+- name: Test
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    filename: "./foo.xml"
+    config_xml:
+      - name: setupStep
+        value: complete
+      - name: setupType
+        value: vm
+    properties:
+      - name: access.mode
+        value: NONE
+      - name: hibernate.setup
+        value: "false"
+
+  tasks:
+    - name: Copy temporary file
+      ansible.builtin.copy:
+        src: "{{ filename }}"
+        dest: "{{ filename }}.tmp"
+        remote_src: true
+      register: xml_contents
+    - name: Configure configuration
+      community.general.xml:
+        path: "{{ filename }}.tmp"
+        xpath: "/configuration/{{ item.name }}"
+        value: "{{ item.value }}"
+      loop: "{{ config_xml }}"
+      register: xml_config_output
+    - name: Configure properties
+      community.general.xml:
+        path: "{{ filename }}.tmp"
+        xpath: "/configuration/properties/property[@name='{{ item.name }}']"
+        value: "{{ item.value }}"
+      loop: "{{ properties }}"
+    - name: Read generated file
+      ansible.builtin.slurp:
+        src: "{{ filename }}.tmp"
+      register: generated_content
+    - name: foo
+      ansible.builtin.debug:
+        var: generated_content['content'] | b64decode
+    - name: Load old checksum for {{ filename }}
+      ansible.builtin.slurp:
+        src: "{{ filename }}.sum"
+      ignore_errors: true
+      register: old_checksum_result
+    - name: Extract old and new checksums
+      ansible.builtin.set_fact:
+        old_checksum: "{{ old_checksum_result['content'] | default('') | b64decode | trim }}"
+        new_checksum: "{{ generated_content | sha1 | trim }}"
+    - name: Checksums differ
+      when: old_checksum != new_checksum
+      block:
+        - name: Write new checksum file for {{ filename }}
+          ansible.builtin.copy:
+            content: "{{ new_checksum }}"
+            dest: "{{ filename }}.sum"
+            mode: '644'
+        - name: Copy temporary file to configuration
+          ansible.builtin.copy:
+            src: "{{ filename }}.tmp"
+            dest: "{{ filename }}"
+            remote_src: true
+        # TODO: Add other tasks to perform when the content has changed
+    - name: Delete temporary file
+      ansible.builtin.file:
+        path: "{{ filename }}.tmp"
+        state: absent

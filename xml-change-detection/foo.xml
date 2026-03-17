@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<configuration>
+  <setupStep>complete</setupStep>
+  <setupType>vm</setupType>
+  <buildNumber>9112</buildNumber>
+  <properties>
+    <property name="access.mode">NONE</property>
+    <property name="hibernate.setup">false</property>
+  </properties>
+</configuration>
