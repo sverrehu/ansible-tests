@@ -4,7 +4,7 @@
   <setupType>vm</setupType>
   <buildNumber>9112</buildNumber>
   <properties>
-    <property name="access.mode">NONE</property>
+    <property name="access.mode">READ</property>
     <property name="hibernate.setup">false</property>
   </properties>
 </configuration>
