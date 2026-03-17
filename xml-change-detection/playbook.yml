@@ -24,14 +24,12 @@
         src: "{{ filename }}"
         dest: "{{ filename }}.tmp"
         remote_src: true
-      register: xml_contents
     - name: Configure configuration
       community.general.xml:
         path: "{{ filename }}.tmp"
         xpath: "/configuration/{{ item.name }}"
         value: "{{ item.value }}"
       loop: "{{ config_xml }}"
-      register: xml_config_output
     - name: Configure properties
       community.general.xml:
         path: "{{ filename }}.tmp"
