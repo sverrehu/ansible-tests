@@ -24,18 +24,21 @@
         src: "{{ filename }}"
         dest: "{{ filename }}.tmp"
         remote_src: true
+      changed_when: false
     - name: Configure configuration
       community.general.xml:
         path: "{{ filename }}.tmp"
         xpath: "/configuration/{{ item.name }}"
         value: "{{ item.value }}"
       loop: "{{ config_xml }}"
+      changed_when: false
     - name: Configure properties
       community.general.xml:
         path: "{{ filename }}.tmp"
         xpath: "/configuration/properties/property[@name='{{ item.name }}']"
         value: "{{ item.value }}"
       loop: "{{ properties }}"
+      changed_when: false
     - name: Read generated file
       ansible.builtin.slurp:
         src: "{{ filename }}.tmp"
@@ -70,3 +73,4 @@
       ansible.builtin.file:
         path: "{{ filename }}.tmp"
         state: absent
+      changed_when: false
